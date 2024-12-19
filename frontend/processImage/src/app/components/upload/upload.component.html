@@ -1,0 +1,28 @@
+<div>
+    <h2>Subir Imagen</h2>
+    <input type="file" (change)="onFileSelected($event)" />
+    <button (click)="onUpload()">Subir</button>
+    <button (click)="openCamera()">Capturar</button>
+  </div>
+  
+  <div *ngIf="isCameraOpen" id="camera-container">
+    <video #videoElement style="width: 100vh; height: auto;" autoplay></video>
+    <canvas #canvasElement style="width: 100%; height: auto;"></canvas>
+    <button (click)="captureImage()">Tomar Foto</button>
+    <button (click)="closeCamera()">Cerrar</button>
+  </div>
+  
+  <div *ngIf="predictionResult">
+    <h3>Resultado de la predicción:</h3>
+    <p>Etiquetas: {{ predictionResult.labels }}</p>
+  </div>
+  
+  <div *ngIf="images.length > 0">
+    <h3>Historial de Imágenes</h3>
+    <ul>
+      <li *ngFor="let image of images">
+        <img [src]="image.file_path" alt="imagen" style="max-width: 200px; max-height: 200px;" />
+        <p>Etiquetas: {{ image.labels }}</p>
+      </li>
+    </ul>
+  </div>
