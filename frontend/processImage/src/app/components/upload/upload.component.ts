@@ -63,6 +63,7 @@ export class UploadComponent {
         this.images = response.map((image: any) => ({
           ...image,
           file_path: `http://localhost:5000/${image.file_path}`,
+          upload_time: new Date(image.upload_time).toLocaleString()
         }));
       },
       (error) => {

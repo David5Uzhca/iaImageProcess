@@ -6,6 +6,7 @@ import joblib
 from PIL import Image
 import numpy as np
 from database import get_db_connection, initialize_database
+import datetime
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -32,7 +33,9 @@ def predict_image(image_path):
     # predicción
     prediction = model.predict(image_array)
     predicted_labels = mlb.inverse_transform(prediction.round())
-    return predicted_labels
+    
+    # Asegúrate de que las etiquetas sean una lista de strings
+    return [str(label) for label in predicted_labels[0]]  # Convertir a lista de strings
 
 # Ruta para subir imágenes
 @app.route('/upload', methods=['POST'])
@@ -54,7 +57,7 @@ def upload_image():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO images (file_path, labels) VALUES (%s, %s) RETURNING id;",
+            "INSERT INTO images (file_path, labels, upload_time) VALUES (%s, %s, CURRENT_TIMESTAMP) RETURNING id;",
             (file_path, labels)
         )
         image_id = cursor.fetchone()[0]
@@ -62,20 +65,28 @@ def upload_image():
         cursor.close()
         conn.close()
 
-        return jsonify({"id": image_id, "file_path": file_path, "labels": labels})
+        # Obtener la fecha de subida en formato ISO
+        upload_time = datetime.datetime.now().isoformat()
+
+        return jsonify({"id": image_id, "file_path": file_path, "labels": labels, "upload_time": upload_time})
 
 # Ruta para listar imágenes y etiquetas
 @app.route('/images', methods=['GET'])
 def list_images():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, file_path, labels FROM images;")
+    cursor.execute("SELECT id, file_path, labels, upload_time FROM images;")
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
 
     return jsonify([
-        {"id": row[0], "file_path": row[1], "labels": row[2]} for row in rows
+        {
+            "id": row[0],
+            "file_path": row[1],
+            "labels": row[2],
+            "upload_time": row[3].isoformat()
+        } for row in rows
     ])
 
 # Ruta para servir archivos estáticos

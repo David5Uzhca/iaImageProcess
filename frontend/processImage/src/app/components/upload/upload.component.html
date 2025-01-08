@@ -21,8 +21,13 @@
     <h3>Historial de Imágenes</h3>
     <ul>
       <li *ngFor="let image of images">
-        <img [src]="image.file_path" alt="imagen" style="max-width: 200px; max-height: 200px;" />
-        <p>Etiquetas: {{ image.labels }}</p>
+        <div class="image-container">
+          <img [src]="image.file_path" alt="imagen" />
+        </div>
+        <div class="text-container">
+          <p class="labels">Etiquetas: {{ image.labels }}</p>
+          <p class="upload-time">Fecha de subida: {{ image.upload_time }}</p>
+        </div>
       </li>
     </ul>
   </div>

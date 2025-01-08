@@ -25,7 +25,8 @@ def initialize_database():
         CREATE TABLE IF NOT EXISTS images (
             id SERIAL PRIMARY KEY,
             file_path TEXT NOT NULL,
-            labels TEXT[] NOT NULL
+            labels TEXT[] NOT NULL,
+            upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
     conn.commit()
