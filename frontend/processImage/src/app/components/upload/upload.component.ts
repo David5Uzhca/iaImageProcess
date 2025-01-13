@@ -14,7 +14,6 @@ export class UploadComponent {
   predictionResult: any = null;
   images: any[] = [];
   isCameraOpen: boolean = false;
-  captureMessage: string | null = null;
 
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
@@ -35,39 +34,45 @@ export class UploadComponent {
         console.error('Error: Formato de archivo no permitido.');
         return;
       }
-
+  
       const maxSize = 5 * 1024 * 1024; // 5 MB
       if (this.selectedFile.size > maxSize) {
         console.error('Error: El archivo es demasiado grande.');
         return;
       }
-
+  
       this.imageService.uploadImage(this.selectedFile).subscribe(
         (response) => {
-          this.predictionResult = response;
-          this.loadImages();
-          this.selectedFile = null;
-          this.predictionResult = null;
+          if (response && response.message === 'Image uploaded successfully') {
+            this.predictionResult = this.filterPredictions(response.predictions);
+            this.loadImages();
+            this.resetFileSelection();
+          } else {
+            console.error('Error desconocido al subir la imagen.');
+          }
         },
         (error) => {
-          console.error('Error uploading image:', error);
-          console.error('Error details:', error.error);
+          console.error('Error al subir la imagen:', error);
+          alert('Error al subir la imagen. Intenta de nuevo.');
         }
       );
     }
   }
+  
 
   loadImages(): void {
     this.imageService.getImages().subscribe(
       (response) => {
         this.images = response.map((image: any) => ({
           ...image,
+          labels: this.filterPredictions(image.labels),
           file_path: `http://localhost:5000/${image.file_path}`,
-          upload_time: new Date(image.upload_time).toLocaleString()
+          upload_time: new Date(image.upload_time).toLocaleString(),
         }));
       },
       (error) => {
         console.error('Error fetching images:', error);
+        alert('Error al cargar las imágenes. Intenta de nuevo.');
       }
     );
   }
@@ -124,5 +129,38 @@ export class UploadComponent {
   private resetFileSelection(): void {
     this.selectedFile = null;
     this.predictionResult = null;
+  }
+
+  private filterPredictions(predictions: any[]): any[] {
+    const uniqueLabels: { [key: string]: any } = {};
+
+    predictions.forEach(prediction => {
+        if (!uniqueLabels[prediction.name] || uniqueLabels[prediction.name].confidence < prediction.confidence) {
+            uniqueLabels[prediction.name] = prediction;
+        }
+    });
+
+    return Object.values(uniqueLabels);
+  }
+
+  speakLabels(labels: any[]): void {
+    const synth = window.speechSynthesis;
+    const textToSpeak = labels.map(label => `${label.name} con precisión de ${label.confidence.toFixed(2)} por ciento`).join(', ');
+    
+    if (synth.speaking) {
+        console.error('Ya se está reproduciendo un discurso.');
+        return;
+    }
+
+    if (textToSpeak !== '') {
+        const utterThis = new SpeechSynthesisUtterance(textToSpeak);
+        utterThis.onend = () => {
+            console.log('Discurso terminado.');
+        };
+        utterThis.onerror = (event) => {
+            console.error('Error en el discurso:', event);
+        };
+        synth.speak(utterThis);
+    }
   }
 }

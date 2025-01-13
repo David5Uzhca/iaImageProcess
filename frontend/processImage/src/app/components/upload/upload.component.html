@@ -1,33 +1,43 @@
-<div>
-    <h2>Subir Imagen</h2>
-    <input type="file" (change)="onFileSelected($event)" />
-    <button (click)="onUpload()">Subir</button>
-    <button (click)="openCamera()">Capturar</button>
-  </div>
-  
-  <div *ngIf="isCameraOpen" id="camera-container">
-    <video #videoElement style="width: 100vh; height: auto;" autoplay></video>
-    <canvas #canvasElement style="width: 100%; height: auto;"></canvas>
-    <button (click)="captureImage()">Tomar Foto</button>
-    <button (click)="closeCamera()">Cerrar</button>
-  </div>
-  
-  <div *ngIf="predictionResult">
-    <h3>Resultado de la predicción:</h3>
-    <p>Etiquetas: {{ predictionResult.labels }}</p>
-  </div>
-  
-  <div *ngIf="images.length > 0">
-    <h3>Historial de Imágenes</h3>
-    <ul>
-      <li *ngFor="let image of images">
-        <div class="image-container">
-          <img [src]="image.file_path" alt="imagen" />
-        </div>
-        <div class="text-container">
-          <p class="labels">Etiquetas: {{ image.labels }}</p>
-          <p class="upload-time">Fecha de subida: {{ image.upload_time }}</p>
-        </div>
-      </li>
-    </ul>    
-  </div>
+  <div>
+      <h2>Subir Imagen</h2>
+      <input type="file" (change)="onFileSelected($event)" />
+      <button (click)="onUpload()">Subir</button>
+      <button (click)="openCamera()">Capturar</button>
+    </div>
+    
+    <div *ngIf="isCameraOpen" id="camera-container">
+      <video id="videoElement" #videoElement autoplay></video>
+      <button id="captureButton" (click)="captureImage()">Tomar Foto</button>
+      <button id="closeButton" (click)="closeCamera()">Cerrar</button>
+    </div>
+    
+    <div *ngIf="predictionResult">
+      <h3>Resultado de la predicción:</h3>
+      <p>Etiquetas:</p>
+      <ul>
+          <li *ngFor="let label of predictionResult">
+              {{ label.name }} (Precision: {{ label.confidence }}%)
+          </li>
+      </ul>
+    </div>
+    
+    <div *ngIf="images.length > 0">
+      <h3>Historial de Imágenes</h3>
+      <ul>
+        <li *ngFor="let image of images">
+          <div class="image-container">
+            <img [src]="image.file_path" alt="imagen" />
+          </div>
+          <div class="text-container">
+            <p class="labels">Etiquetas:</p>
+            <ul>
+              <li *ngFor="let label of image.labels">
+                {{ label.name }} (Presición: {{ label.confidence }}%)
+              </li>
+            </ul>
+            <p class="upload-time">Fecha de subida: {{ image.upload_time }}</p>
+            <button (click)="speakLabels(image.labels)"> ▷  </button>
+          </div>
+        </li>
+      </ul>    
+    </div>
