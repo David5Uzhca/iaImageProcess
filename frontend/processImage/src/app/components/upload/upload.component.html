@@ -6,9 +6,10 @@
     </div>
     
     <div *ngIf="isCameraOpen" id="camera-container">
-      <video id="videoElement" #videoElement autoplay></video>
-      <button id="captureButton" (click)="captureImage()">Tomar Foto</button>
-      <button id="closeButton" (click)="closeCamera()">Cerrar</button>
+      <video #videoElement autoplay></video>
+      <canvas #canvasElement></canvas>
+      <button (click)="captureImage()">Tomar Foto</button>
+      <button (click)="closeCamera()">Cerrar</button>
     </div>
     
     <div *ngIf="predictionResult">

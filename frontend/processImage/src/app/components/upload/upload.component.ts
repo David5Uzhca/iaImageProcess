@@ -116,6 +116,9 @@ export class UploadComponent {
       return;
     }
 
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
       if (blob) {

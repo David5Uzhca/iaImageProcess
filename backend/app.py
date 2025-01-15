@@ -9,24 +9,19 @@ import logging
 from werkzeug.utils import secure_filename
 import json
 
-# Configuración
 UPLOAD_FOLDER = "uploads"
 MODEL_PATH = os.path.join("models", "yolov5s.pt")
 LOGGING_LEVEL = logging.INFO
 
-# Crear carpetas necesarias
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Inicialización de Flask
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Configuración del registro de logs
 logging.basicConfig(level=LOGGING_LEVEL)
 logger = logging.getLogger(__name__)
 
-# Cargar el modelo YOLOv5
 try:
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH)
     logger.info("Modelo YOLOv5 cargado exitosamente.")
@@ -38,51 +33,42 @@ except Exception as e:
 def index():
     return "Bienvenido a la API de procesamiento de imágenes con YOLOv5"
 
-# Método para predecir etiquetas usando YOLOv5
 def predict_image(image_path):
     try:
-        # Abrir la imagen y hacer predicción
         results = model(image_path)
 
-        # Extraer etiquetas y confidencias
         predictions = results.pandas().xyxy[0]
         predictions = predictions[['name', 'confidence']]
         predictions['confidence'] = (predictions['confidence'] * 100).round(2)
 
-        # Agrupar por etiquetas únicas con máxima confianza
         unique_labels = predictions.groupby('name', as_index=False).max()
         return unique_labels.to_dict(orient='records')
     except Exception as e:
         logger.error(f"Error al predecir la imagen: {e}")
         raise
 
-# Ruta para subir imágenes
 @app.route('/upload', methods=['POST'])
 def upload_image():
     try:
-        conn = get_db_connection()  # Obtener la conexión a la base de datos
-        cursor = conn.cursor()  # Crear un cursor para ejecutar consultas
+        conn = get_db_connection() 
+        cursor = conn.cursor() 
 
-        # Guardar el archivo subido
         if 'file' not in request.files:
             return jsonify({'error': 'No file part'}), 400
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
 
-        # Guardar en el servidor
         filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
+        logger.info(f"Archivo guardado en: {file_path}")
 
-        # Realizar predicciones con YOLOv5
         results = model(file_path)
         predictions = results.pandas().xyxy[0][['confidence', 'name']].to_dict(orient='records')
 
-        # Convertir a JSON
-        predictions_json = json.dumps(predictions)  # Convertir a cadena JSON
+        predictions_json = json.dumps(predictions)
 
-        # Guardar en la base de datos
         query = """
         INSERT INTO images (file_path, labels, upload_time)
         VALUES (%s, %s::JSONB, CURRENT_TIMESTAMP)
@@ -94,13 +80,12 @@ def upload_image():
         return jsonify({'message': 'Image uploaded successfully', 'predictions': predictions}), 200
 
     except Exception as e:
-        print(f"Error al procesar la solicitud de subida: {e}")
+        logger.error(f"Error al procesar la solicitud de subida: {e}")
         return jsonify({'error': 'Error uploading image. Try again.'}), 500
     finally:
-        cursor.close()  # Asegurarse de cerrar el cursor
-        conn.close()  # Asegurarse de cerrar la conexión
+        cursor.close() 
+        conn.close() 
 
-# Ruta para listar imágenes y etiquetas
 @app.route('/images', methods=['GET'])
 def list_images():
     try:
@@ -121,7 +106,6 @@ def list_images():
         logger.error(f"Error al listar imágenes: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Ruta para servir archivos estáticos
 @app.route('/uploads/<path:filename>', methods=['GET'])
 def serve_uploaded_file(filename):
     try:
