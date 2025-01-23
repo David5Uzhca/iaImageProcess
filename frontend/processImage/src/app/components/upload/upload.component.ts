@@ -66,7 +66,7 @@ export class UploadComponent {
         this.images = response.map((image: any) => ({
           ...image,
           labels: this.filterPredictions(image.labels),
-          file_path: `http://localhost:5000/${image.file_path}`,
+          file_path: `http://172.16.215.132:5000/uploads/${image.file_path}`,
           upload_time: new Date(image.upload_time).toLocaleString(),
         }));
       },
@@ -115,9 +115,6 @@ export class UploadComponent {
       console.error('Error: Unable to get canvas context.');
       return;
     }
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {

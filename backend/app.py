@@ -9,7 +9,7 @@ import logging
 from werkzeug.utils import secure_filename
 import json
 
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = "C:/Users/Dell/Desktop/ups/Ciclo 6 dev/Inteligencia Artificial/p5/app/backend/uploads"
 MODEL_PATH = os.path.join("models", "yolov5s.pt")
 LOGGING_LEVEL = logging.INFO
 
@@ -62,6 +62,7 @@ def upload_image():
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
+
         logger.info(f"Archivo guardado en: {file_path}")
 
         results = model(file_path)
@@ -74,7 +75,7 @@ def upload_image():
         VALUES (%s, %s::JSONB, CURRENT_TIMESTAMP)
         RETURNING id;
         """
-        cursor.execute(query, (file_path, predictions_json))
+        cursor.execute(query, (filename, predictions_json))
         conn.commit()
 
         return jsonify({'message': 'Image uploaded successfully', 'predictions': predictions}), 200
